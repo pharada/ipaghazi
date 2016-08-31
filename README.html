@@ -1,0 +1,218 @@
+<p><code>ipaghazi</code> is a web service for over-the-air (OTA) distribution of iOS apps.</p>
+
+<h2>Use cases</h2>
+
+<ul>
+<li><p>You develop in-house apps for a team and would like to provide an easy way to
+browse and install them.</p></li>
+<li><p>Beta testing?</p></li>
+</ul>
+
+<h2>What it does</h2>
+
+<ul>
+<li><p>CRUD (seriously) API for publishing app builds.</p></li>
+<li><p>Basic web frontend for browsing and installing apps on client devices.</p></li>
+</ul>
+
+<h2>What it doesn't do</h2>
+
+<ul>
+<li><p><strong>Non-terrible security or access control. Don't use this in a mission-critical
+context!</strong></p></li>
+<li><p>HTTPS. Use a reverse proxy.</p></li>
+<li><p>Useful error messages.</p></li>
+<li><p>Anything related to provisioning profiles or code signing. IPAs are served
+as-is. This will present problems if an IPA becomes invalid due to e.g.
+signing certificate expiration.</p>
+
+<p><code>ipaghazi</code> can serve any <code>.ipa</code>, but iOS will only accept those signed for
+"ad-hoc distribution" or "internal distribution". Of these, internal
+distribution is more convenient because one need not manage UDIDs, but it
+requires paying Apple more money for the requisite signing privileges.</p></li>
+<li><p>Accept IPA uploads. Storage is delegated to other services, such as Amazon S3,
+web servers, etc. One uploads the IPA separately and then tells <code>ipaghazi</code>
+where to find it.</p></li>
+<li><p>Push apps to devices. This is a different meaning of the term "OTA". To push
+apps, you need an iOS mobile device management (MDM) service, such as OS X
+Server's Profile Manager.</p></li>
+</ul>
+
+<h2>Configuration</h2>
+
+<p><code>ipaghazi</code> is configured through environment variables.</p>
+
+<ul>
+<li><p><code>IPAGHAZI_BASEURL</code>: Where the app is accessible. The API is homed at
+<code>$IPAGHAZI_BASEURL/api</code>. Required.</p></li>
+<li><p><code>IPAGHAZI_MONGODB</code>: Where the database is. Something like
+<code>mongodb://localhost/some-database</code>. Required.</p></li>
+<li><p><code>IPAGHAZI_ANON_PERMS</code>: Implicit permissions for unauthenticated API users and
+the web UI. Optional, but you probably want to set it to <code>browse-app</code>.
+Permission names are whitespace-separated.</p></li>
+<li><p><code>IPAGHAZI_ROOT_USER</code>: Username for the root API user, which has all
+permissions. If empty, root user is disabled. Optional.</p></li>
+<li><p><code>IPAGHAZI_ROOT_KEY</code>: Key for the root API user. If empty, root user is
+disabled. Optional. The key is freeform, but a 64-character hex string is
+recommended:</p>
+
+<pre><code>LANG=C tr -cd 0-9a-f &lt;/dev/urandom | head -c 64
+</code></pre></li>
+<li><p><code>IPAGHAZI_METHODS</code>: Valid IPA retrieval methods. A submitted build may specify
+any method, but the IPA cannot be retrieved unless the method is in this list.
+Method names are whitespace-separated. Optional. By default, no methods are
+valid.</p></li>
+</ul>
+
+<h2>IPA retrieval methods</h2>
+
+<h3><code>s3</code></h3>
+
+<p>Retrieves from an S3 bucket. Takes the following <code>method-params</code>:</p>
+
+<pre><code>{"bucket": "some-s3-bucket",
+ "object": "some-object-key"}
+</code></pre>
+
+<p>To use this method with a non-public bucket, you must arrange to configure the
+AWS SDK credentials. In general, setting <code>AWS_ACCESS_KEY_ID</code> and
+<code>AWS_SECRET_ACCESS_KEY</code> should suffice. If you are running on an EC2 instance
+with an IAM role, the AWS SDK should automatically pick up credentials.</p>
+
+<h3><code>url</code></h3>
+
+<p>Retrieves from a URL. Takes the following <code>method-params</code>:</p>
+
+<pre><code>{"url": "http://server/some-app.ipa"}
+</code></pre>
+
+<h3><code>file</code> (do not use)</h3>
+
+<p>Retrieves from the local filesystem. Takes the following <code>method-params</code>:</p>
+
+<pre><code>{"path": "/path/to/app.ipa"}
+</code></pre>
+
+<p><strong>This method is obviously dangerous, so don't enable it in production.</strong> One
+could easily submit a build whose <code>path</code> is <code>/etc/shadow</code>. Running <code>curl
+http://server/api/build/98eccd9324cb9c674811e65c/ipa</code> would then dump out all
+your password hashes. Oops.</p>
+
+<p>But it's handy for testing.</p>
+
+<h2>Installation</h2>
+
+<p>From source:</p>
+
+<pre><code>npm install
+bower install
+env [...] ./ipaghazi
+</code></pre>
+
+<h2>Background</h2>
+
+<p>Within organizations, one would often like to distribute internal iOS apps
+through the simple means of opening a link to an app file, as is possible with
+Android APKs. Of course, this is Apple technology, so the simple solution is out
+of the question. Instead we are forced to deal with the unnecessarily
+complicated mechanism of over-the-air (OTA) install manifests. The user opens a
+link of the form:</p>
+
+<pre><code>itms-services://?action=download-manifest&amp;url=https://example.org/manifest.plist
+</code></pre>
+
+<p>Note the conspicuous lack of any IPA files in that link. Instead, one specifies
+a URL to a "manifest" which looks like this:</p>
+
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
+&lt;plist version="1.0"&gt;
+&lt;dict&gt;
+    &lt;key&gt;items&lt;/key&gt;
+    &lt;array&gt;
+        &lt;dict&gt;
+            &lt;key&gt;assets&lt;/key&gt;
+            &lt;array&gt;
+                &lt;dict&gt;
+                    &lt;key&gt;kind&lt;/key&gt;
+                    &lt;string&gt;software-package&lt;/string&gt;
+                    &lt;key&gt;url&lt;/key&gt;
+                    &lt;string&gt;https://example.org/someapp.ipa&lt;/string&gt;
+                &lt;/dict&gt;
+            &lt;/array&gt;
+            &lt;key&gt;metadata&lt;/key&gt;
+            &lt;dict&gt;
+                &lt;key&gt;bundle-identifier&lt;/key&gt;
+                &lt;string&gt;org.example.someapp&lt;/string&gt;
+                &lt;key&gt;bundle-version&lt;/key&gt;
+                &lt;string&gt;1.0&lt;/string&gt;
+                &lt;key&gt;kind&lt;/key&gt;
+                &lt;string&gt;software&lt;/string&gt;
+                &lt;key&gt;title&lt;/key&gt;
+                &lt;string&gt;SomeApp&lt;/string&gt;
+            &lt;/dict&gt;
+        &lt;/dict&gt;
+    &lt;/array&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;
+</code></pre>
+
+<p>The IPA URL is specified here in addition to the app bundle ID, version, and
+name. The manifest is completely redundant as all of this information is
+contained within the IPA itself. Moreover, arbitrary constraints have been
+applied to this process:</p>
+
+<ul>
+<li><p>The manifest and IPA must be served over HTTPS.</p></li>
+<li><p>You can't use <code>file://</code> URLs. Installing from local storage would be too
+<em>simple</em>, you see.</p></li>
+</ul>
+
+<p>iOS performs installation through a service running in the background. When the
+user presses "OK" to allow the install, nothing else happens in the browser, and
+one must go to the home screen to observe progress.</p>
+
+<p>Because the manifest hardcodes the URL, it will break if one decides to put the
+IPA somewhere else. One must also generate a manifest anew for every build so
+that the redundant metadata will match. It would therefore be preferable to
+autogenerate the manifest, and for this one needs a backend.</p>
+
+<p>Authentication is also a problem. You can...</p>
+
+<ul>
+<li><p>Host apps on your firewalled intranet.</p></li>
+<li><p>Require a VPN to access apps.</p></li>
+<li><p>Use HTTP Basic Authentication. This works, but the user may need to enter
+credentials three times - once to access the page with the <code>itms-services://</code>
+link, once for iOS to download the manifest, and once for the IPA. iOS does
+not remember credentials between contexts.</p></li>
+<li><p>Don't restrict access, and just hope nobody finds the URL. What could go
+wrong?</p></li>
+</ul>
+
+<p>The options for authentication are otherwise limited. You can't use OAuth
+because that requires in-browser user interaction, and you can't specify HTTP
+headers. You also can't embed a password in the manifest and IPA URLs like
+<code>https://user:password@example.org/...</code>, because iOS will prefill the username
+but ignore the password. Putting credentials in the query string is an option.</p>
+
+<p><code>ipaghazi</code> approaches the problem by making it your problem. You could configure
+your HTTPS termination proxy to require Basic authentication for the web
+interface (<code>$IPAGHAZI_BASEURL</code>) but allow unauthenticated requests to the API
+(<code>$IPAGHAZI_BASEURL/api</code>). Or you could put the whole thing behind a firewall
+and forget about authentication.</p>
+
+<h2>"ipaghazi"?</h2>
+
+<p>It's an "IPA gateway".
+<a href="https://en.wikipedia.org/wiki/Watergate_scandal">"-gate"</a> is a common suffix
+for political scandals, as is now
+<a href="https://en.wikipedia.org/wiki/2012_Benghazi_attack">"-ghazi"</a>. Thus,
+"ipaghazi", an uninspired and unnecessarily provocative play on words.
+Suggestions for better names are welcome.</p>
+
+<blockquote>
+  <p>Hey! You got your politics butter on my software chocolate!</p>
+</blockquote>
+
+<p>Oops.</p>

@@ -1,0 +1,18 @@
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="#!/">Apps</a></li>
+  <li class="breadcrumb-ite"><a href="#!/{{app}}">{{app}}</a></li>
+  <li class="breadcrumb-item">{{reftype}}</li>
+  <li class="breadcrumb-item active">{{ref}}</li>
+</ol>
+<div class="alert alert-danger" role="alert" ng-show="error !== undefined">
+  {{error}}
+</div>
+<div class="panel panel-primary">
+  <div class="panel-heading">Builds</div>
+  <ul class="list-group">
+    <a class="list-group-item list-group-item-action" ng-repeat="build in builds" href="{{build.manifest}}">
+      {{build.date}}
+      <span class="label label-primary pull-right" ng-show="$first">Latest</span>
+    </a>
+  </ul>
+</div>

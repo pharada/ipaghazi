@@ -1,0 +1,21 @@
+{
+    "name": "ipaghazi",
+    "version": "0.0.1",
+    "description": "iOS app OTA distribution gateway",
+    "license": "CC0-1.0",
+    "author": "Sam Harada <sam@pharada.org> (https://pharada.org/)",
+    "homepage": "https://github.com/pharada/ipaghazi",
+    "repository": "https://github.com/pharada/ipaghazi",
+    "dependencies": {
+        "dateformat": "~1.0.12",
+        "express": "~4.14.0",
+        "body-parser": "~1.15.2",
+        "mongoose": "~4.5.8",
+        "unzip": "~0.1.11",
+        "simple-plist": "~0.1.4"
+    },
+    "main": "main.js",
+    "scripts": {
+        "start": "node main.js"
+    }
+}

@@ -1,0 +1,15 @@
+<ol class="breadcrumb">
+  <li class="breadcrumb-item active">Apps</li>
+</ol>
+<div class="alert alert-danger" role="alert" ng-show="error !== undefined">
+  {{error}}
+</div>
+<div class="panel panel-primary">
+  <div class="panel-heading">Apps</div>
+  <ul class="list-group">
+    <a class="list-group-item list-group-item-action" ng-repeat="app in apps" href="#!/{{app.name}}">
+      <h4 class="list-group-item-heading">{{app.name}}</h4>
+      <p class="list-group-item-text">{{app.description || "(no description)"}}</p>
+    </a>
+  </ul>
+</div>

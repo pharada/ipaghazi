@@ -1,0 +1,24 @@
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="#!/">Apps</a></li>
+  <li class="breadcrumb-item active">{{app}}</li>
+</ol>
+<div class="alert alert-danger" role="alert" ng-show="error !== undefined">
+  {{error}}
+</div>
+<div class="panel panel-primary">
+  <div class="panel-heading">Releases</div>
+  <ul class="list-group">
+    <a class="list-group-item list-group-item-action" ng-repeat="tag in tags" ng-href="{{tag.manifest}}">
+      {{tag.name}}
+      <span class="label label-primary pull-right" ng-show="$first">Latest</span>
+    </a>
+  </ul>
+</div>
+<div class="panel panel-default">
+  <div class="panel-heading">Branches</div>
+  <ul class="list-group">
+    <a class="list-group-item list-group-item-action" ng-repeat="branch in branches" ng-href="#!/{{app}}/branch/{{branch}}">
+      {{branch}}
+    </a>
+  </ul>
+</div>

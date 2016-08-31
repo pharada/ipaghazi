@@ -1,0 +1,7 @@
+/.git/
+/.gitignore
+/.dockerignore
+/Dockerfile
+/docker-entrypoint.sh
+/node_modules/
+/ui/lib/
