@@ -142,16 +142,38 @@ function errorFallback(res) {
     };
 }
 
-function retrieveAppStream(method, params) {
-    if (!(process.env.IPAGHAZI_METHODS || '').split(/\s+/).includes(method)) {
-        return Promise.reject(new JsonableError(500, "invalid app method"));
-    }
-
-    if (method == 'file') {
+const methods = {
+    file: function (params) {
         return Promise.resolve(fs.createReadStream(params.path));
+    },
+    url: (function () {
+        const https = require('https');
+        return function (params) {
+            return new Promise(function (resolve, reject) {
+                https.get(params.url, resolve).on('error', reject);
+            });
+        };
+    })(),
+    s3: (function () {
+        const AWS = require('aws-sdk');
+        const S3 = new AWS.S3();
+        return function (params) {
+            return Promise.resolve(S3.getObject({
+                Bucket: params.bucket,
+                Key: params.key,
+            }).createReadStream());
+        };
+    })(),
+};
+
+function retrieveAppStream(method, params) {
+    if (!methods.hasOwnProperty(method)) {
+        return Promise.reject(new JsonableError(500, "unknown app method"));
     }
-    else
-        return Promise.reject(new JsonableError(500, "invalid app method"));
+    else if (!(process.env.IPAGHAZI_METHODS || '').split(/\s+/).includes(method)) {
+        return Promise.reject(new JsonableError(500, "disabled app method"));
+    }
+    return methods[method](params);
 }
 
 function requirePermissions(reqperms) {
@@ -209,10 +231,6 @@ api.route('/build').post(requirePermissions([
         });
     }).then(buildref_ => {
         buildref = buildref_;
-        if (!(process.env.IPAGHAZI_METHODS || '').split(/\s+/)
-            .includes(req.body.method)) {
-            throw new JsonableError(400, "invalid method");
-        }
         return new Build({
             _app: app,
             _buildref: buildref,
@@ -415,5 +433,6 @@ module.exports = {
     setup: setup,
     JsonableError: JsonableError,
     errorFallback: errorFallback,
+    methods: methods,
 };
 Object.assign(module.exports, models);
