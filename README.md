@@ -105,15 +105,23 @@ But it's handy for testing.
 
 ## Installation
 
-From source:
+App from source:
 
     npm install
     bower install
-    env [...] ./main.js # See Configuration section
+    env [...] ./main.js # See Configuration for required environment
 
-With Docker:
+Docker image from source:
 
-   docker build .
+    docker build .
+
+App from public repository:
+
+    npm install ipaghazi
+
+Docker image from Hub:
+
+    docker pull pharada/ipaghazi
 
 ## Background
 
