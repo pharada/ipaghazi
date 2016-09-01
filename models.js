@@ -76,6 +76,7 @@ const validPermissions = [
     'create-build',
 
     // Admin
+    'modify-app',
     'browse-user',
     'create-user',
     'delete-user',

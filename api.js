@@ -46,6 +46,18 @@ api.route('/app/:app').get(requirePermissions([
             refs: refdir,
         });
     }).catch(errorFallback(res));
+}).patch(requirePermissions([
+    'modify-app',
+]), bodyparser.json(), function (req, res) {
+    let app;
+    App.findOne({name: req.params.app}).then(app_ => {
+        if (!app_)
+            throw new JsonableError(404, "no such app");
+        app = app_;
+        if (req.body.description !== undefined)
+            app.description = req.body.description;
+        return app.save();
+    }).then(() => res.json(representApp(app))).catch(errorFallback(res));
 });
 
 api.route('/app/:app/:reftype').get(requirePermissions([
