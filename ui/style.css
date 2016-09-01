@@ -1,3 +1,7 @@
-body {
+.breadcrumb {
     margin-top: 20px;
+}
+
+body > .container {
+    max-width: 600px;
 }
