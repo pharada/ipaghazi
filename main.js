@@ -11,7 +11,7 @@ function main() {
         const app = express();
         app.use(path.join(api.baseUrl.pathname, '/api'), api.router);
         app.use(api.baseUrl.pathname, express.static(__dirname + '/ui'));
-        app.listen(80);
+        app.listen(process.env.IPAGHAZI_PORT);
     }).catch(e => {
         console.log(e);
         process.exit(1);

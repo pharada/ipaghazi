@@ -43,6 +43,8 @@
 
 `ipaghazi` is configured through environment variables.
 
+- `IPAGHAZI_PORT`: HTTP port. Required.
+
 - `IPAGHAZI_BASEURL`: Where the app is accessible. The API is homed at
   `$IPAGHAZI_BASEURL/api`. Note that `ipaghazi` expects to see the full path;
   the reverse proxy, if any, should not strip off the path prefix. Required.
