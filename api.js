@@ -147,11 +147,9 @@ const methods = {
         return Promise.resolve(fs.createReadStream(params.path));
     },
     url: (function () {
-        const https = require('https');
+        const request = require('request');
         return function (params) {
-            return new Promise(function (resolve, reject) {
-                https.get(params.url, resolve).on('error', reject);
-            });
+            return Promise.resolve(request(params.url));
         };
     })(),
     s3: (function () {

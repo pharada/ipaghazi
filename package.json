@@ -8,12 +8,13 @@
     "repository": "https://github.com/pharada/ipaghazi",
     "dependencies": {
         "aws-sdk": "~2.5.4",
+        "body-parser": "~1.15.2",
         "dateformat": "~1.0.12",
         "express": "~4.14.0",
-        "body-parser": "~1.15.2",
         "mongoose": "~4.5.8",
-        "unzip": "~0.1.11",
-        "simple-plist": "~0.1.4"
+        "request": "~2.74.0",
+        "simple-plist": "~0.1.4",
+        "unzip": "~0.1.11"
     },
     "main": "main.js",
     "scripts": {
