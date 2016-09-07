@@ -271,7 +271,6 @@ api.route('/build/:id/manifest').get(requirePermissions([
                     en.on('data', b => bufs.push(b));
                     en.on('end', () => {
                         resolve(plist.parse(Buffer.concat(bufs)));
-                        zip.end();
                     });
                 }
                 else {
