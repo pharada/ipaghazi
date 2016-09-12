@@ -154,12 +154,15 @@ const methods = {
     })(),
     s3: (function () {
         const AWS = require('aws-sdk');
+        const request = require('request');
         const S3 = new AWS.S3();
         return function (params) {
-            return Promise.resolve(S3.getObject({
-                Bucket: params.bucket,
-                Key: params.key,
-            }).createReadStream());
+            return new Promise(function (resolve, reject) {
+                S3.getSignedUrl('getObject', {
+                    Bucket: params.bucket,
+                    Key: params.key,
+                }, (err, url) => err ? reject(err) : resolve(request(url)));
+            });
         };
     })(),
 };
