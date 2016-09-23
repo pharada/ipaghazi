@@ -111,9 +111,9 @@ angular.module('ipaghazi', ['ngRoute']).service('API', function ($http, $httpPar
                     $scope.builds = builds.slice().sort(function (a, b) {
                         var da = new Date(a.date);
                         var db = new Date(b.date);
-                        return da < db ? -1 : da > db ? 1 : 0;n
+                        return da < db ? -1 : da > db ? 1 : 0;
                     }).reverse().map(function (x) {
-                        return {date: x.date, manifest: API.manifestForBuild(id)};
+                        return {date: x.date, manifest: API.manifestForBuild(x.id)};
                     });
                 }
             }, function (err) {
