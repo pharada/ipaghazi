@@ -1,6 +1,6 @@
 {
     "name": "ipaghazi",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "iOS app OTA distribution gateway",
     "license": "CC0-1.0",
     "author": "Sam Harada <sam@pharada.org> (https://pharada.org/)",
