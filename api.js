@@ -7,8 +7,9 @@ const path = require('path');
 const util = require('util');
 
 const dateformat = require('dateformat');
-const unzip = require('unzip');
+const tmp = require('tmp');
 const plist = require('simple-plist');
+const StreamZip = require('node-stream-zip');
 const express = require('express');
 const bodyparser = require('body-parser');
 const mongoose = require('mongoose');
@@ -258,31 +259,47 @@ api.route('/build/:id').get(requirePermissions([
 api.route('/build/:id/manifest').get(requirePermissions([
     'browse-app',
 ]), function (req, res) {
+    var tmpfile;
     Build.findOne({_id: req.params.id}).then(build => {
         if (!build)
             throw new JsonableError(404, "no such build");
         return retrieveAppStream(build.method, build.methodParams);
-    }).then(stream => {
-        stream.on('error', errorFallback(res));
-        return new Promise((resolve, reject) => {
-            const zip = stream.pipe(unzip.Parse());
-            zip.on('error', e => reject(e));
-            zip.on('entry', en => {
-                if (en.path.match(/^Payload\/[^\/]+\.app\/Info.plist$/)) {
-                    const bufs = [];
-                    en.on('error', e => reject(e));
-                    en.on('data', b => bufs.push(b));
-                    en.on('end', () => {
-                        resolve(plist.parse(Buffer.concat(bufs)));
-                    });
-                }
-                else {
-                    en.autodrain();
-                }
-            });
-            zip.on('close', () => reject("no plist found"));
+    }).then(stream => new Promise((resolve, reject) => {
+        tmp.file({keep: true}, (err, path, fd, done) => {
+            console.log(path);
+            tmpfile = {fd: fd, path: path};
+            const dst = fs.createWriteStream(null, {fd: tmpfile.fd});
+            stream.on('error', reject);
+            dst.on('error', reject);
+            dst.on('finish', resolve);
+            stream.pipe(dst);
         });
-    }).then(plistdata => {
+    })).then(tmppath => new Promise((resolve, reject) => {
+        const zip = new StreamZip({file: tmpfile.path})
+        var plistname;
+        zip.on('error', reject);
+        zip.on('entry', entry => {
+            if (entry.name.match(/^Payload\/[^\/]+\.app\/Info.plist$/))
+                plistname = entry.name;
+        });
+        zip.on('ready', () => {
+            if (!plistname)
+                return reject(new JsonableError(500, "no plist in IPA"));
+            zip.stream(plistname, (err, st) => {
+                if (err)
+                    return reject(err);
+                const chunks = [];
+                st.on('error', reject);
+                st.on('data', d => chunks.push(d));
+                st.on('end', () => resolve(plist.parse(Buffer.concat(chunks))));
+            });
+        });
+    })).then(data => new Promise((resolve, reject) => {
+        fs.unlink(tmpfile.path, e => e ? reject(e) : resolve(data));
+    }), err => new Promise((resolve, reject) => {
+        if (tmpfile)
+            fs.unlink(tmpfile.path, e => reject(e || err));
+    })).then(plistdata => {
         const ipa = url.format({
             protocol: baseUrl.protocol,
             hostname: baseUrl.hostname,
